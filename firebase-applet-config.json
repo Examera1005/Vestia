@@ -1,10 +1,10 @@
 {
-  "projectId": "gen-lang-client-0367723953",
-  "appId": "1:1038740086830:web:c242e2786e59cacab9ffbf",
-  "apiKey": "AIzaSyC1-PWpPF5Kc0Tfjulji2MQu93KTQmQSUI",
-  "authDomain": "gen-lang-client-0367723953.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-aaee3d9f-52f4-4b0f-a1f1-cdb408790cae",
-  "storageBucket": "gen-lang-client-0367723953.firebasestorage.app",
-  "messagingSenderId": "1038740086830",
-  "measurementId": ""
+  "projectId": "vestia-38656",
+  "appId": "1:788054376533:web:29aec931421313eb5554dc",
+  "apiKey": "AIzaSyC67uFlBR09bJC6pv_LFRuUidGPlqI0Mx4",
+  "authDomain": "vestia-38656.firebaseapp.com",
+  "firestoreDatabaseId": "(default)",
+  "storageBucket": "vestia-38656.firebasestorage.app",
+  "messagingSenderId": "788054376533",
+  "measurementId": "G-FK7RLYHW2G"
 }

@@ -17,7 +17,7 @@ View your app in AI Studio: https://ai.studio/apps/aaee3d9f-52f4-4b0f-a1f1-cdb40
    `npm install`
 2. Set server-only secrets in `.env.local`:
    `GEMINI_API_KEY=...`
-   `FIREBASE_PROJECT_ID=gen-lang-client-0367723953`
+   `FIREBASE_PROJECT_ID=vestia-38656`
 3. Run the app UI:
    `npm run dev`
 
