@@ -12,13 +12,24 @@
       },
       "required": ["gender", "createdAt", "updatedAt"]
     },
-    "TryOn": {
-      "title": "TryOn",
-      "description": "A generated try-on session",
+    "WardrobeItem": {
+      "title": "WardrobeItem",
+      "description": "An extracted and normalized clothing item",
       "type": "object",
       "properties": {
         "userId": { "type": "string" },
-        "clothingImageBase64": { "type": "string" },
+        "category": { "type": "string", "enum": ["top", "bottom", "fullbody"] },
+        "imageBase64": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["userId", "category", "imageBase64", "createdAt"]
+    },
+    "Outfit": {
+      "title": "Outfit",
+      "description": "A saved combination of wardrobe items",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
         "resultImageBase64": { "type": "string" },
         "createdAt": { "type": "string" }
       },
@@ -30,9 +41,13 @@
       "schema": { "$ref": "#/entities/User" },
       "description": "Stores user profile."
     },
-    "tryOns/{tryOnId}": {
-      "schema": { "$ref": "#/entities/TryOn" },
-      "description": "Stores generated try-ons."
+    "wardrobeItems/{itemId}": {
+      "schema": { "$ref": "#/entities/WardrobeItem" },
+      "description": "Stores individual extracted clothing items."
+    },
+    "outfits/{outfitId}": {
+      "schema": { "$ref": "#/entities/Outfit" },
+      "description": "Stores saved outfit combos."
     }
   }
 }

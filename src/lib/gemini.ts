@@ -2,13 +2,12 @@ import { GoogleGenAI } from '@google/genai';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-export async function generateTryOn(baseImageBase64: string, clothingImageBase64: string): Promise<string> {
-  // Strip the prefix if present (e.g. data:image/jpeg;base64,)
-  const baseData = baseImageBase64.split(',')[1] || baseImageBase64;
+export async function extractClothing(userPhotoBase64: string, clothingImageBase64: string, category: 'top' | 'bottom' | 'fullbody'): Promise<string> {
+  const baseData = userPhotoBase64.split(',')[1] || userPhotoBase64;
   const clothData = clothingImageBase64.split(',')[1] || clothingImageBase64;
   
   const response = await ai.models.generateContent({
-    model: 'gemini-3.1-flash-image-preview', // The recommended model for image stuff
+    model: 'gemini-3.1-flash-image-preview', 
     contents: {
       parts: [
         {
@@ -24,14 +23,14 @@ export async function generateTryOn(baseImageBase64: string, clothingImageBase64
           }
         },
         {
-          text: 'Superimpose the clothing from the second image realistically onto the person in the first image. Keep the person\'s face, body type, background identically unchanged. Only change the outfit to match the provided clothing, ensuring accurate lighting, texture, and fit.'
+          text: `Extract the ${category} clothing item from the second image. Then, reshape, warp, and resize it so that its angles, sleeve positions, shapes, and proportions perfectly align with the body and pose of the person in the first image, as if it was worn by them. The output MUST ONLY be the isolated, reshaped clothing item on a pure, solid white background. No person, no mannequins, no other objects. Pure white background.`
         }
       ]
     },
     config: {
       imageConfig: {
         aspectRatio: "3:4",
-        imageSize: "1K" // Might need size limiting for Firebase upload afterwards or use standard resolution
+        imageSize: "1K"
       }
     }
   });

@@ -21,14 +21,14 @@ export default function Gallery() {
     const fetchGallery = async () => {
       try {
         const q = query(
-          collection(db, 'tryOns'),
+          collection(db, 'outfits'),
           where('userId', '==', user.uid)
-          // Note: using orderBy without index might fail if complex query, but single where should work
-          // Wait, 'userId' is good. We can sort it client side to avoid index requirement for equality + sort.
         );
         const snapshot = await getDocs(q);
         const fetchedItems = snapshot.docs.map(doc => ({
           id: doc.id,
+          // Outfits have only resultImageBase64 now
+          clothingImageBase64: '',
           ...doc.data()
         })) as TryOnRecord[];
         
@@ -67,13 +67,8 @@ export default function Gallery() {
                
                {/* Hover Overlay */}
                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity p-6 flex flex-col justify-end">
-                  <div className="flex items-center justify-between translate-y-4 group-hover:translate-y-0 transition-transform">
-                     {item.clothingImageBase64 && (
-                       <div className="h-12 w-12 rounded-lg border-2 border-white/20 overflow-hidden shadow-xl bg-white/10 backdrop-blur-md">
-                          <img src={item.clothingImageBase64} className="h-full w-full object-cover" alt="Original Item" />
-                       </div>
-                     )}
-                     <a href={item.resultImageBase64} download={`vestia-${item.id}.jpg`} className="h-10 w-10 flex items-center justify-center bg-white rounded-full text-black hover:scale-110 transition-transform shadow-xl">
+                  <div className="flex items-center justify-end translate-y-4 group-hover:translate-y-0 transition-transform">
+                     <a href={item.resultImageBase64} download={`vestia-outfit-${item.id}.jpg`} className="h-10 w-10 flex items-center justify-center bg-white rounded-full text-black hover:scale-110 transition-transform shadow-xl">
                         <Download className="h-4 w-4" />
                      </a>
                   </div>

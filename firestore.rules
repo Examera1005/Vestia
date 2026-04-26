@@ -20,11 +20,17 @@ service cloud.firestore {
              (data.keys().hasAll(['basePhotoBase64']) ? (data.basePhotoBase64 is string && data.basePhotoBase64.size() <= 1048487) : true);
     }
     
-    function isValidTryOn(data) {
+    function isValidWardrobeItem(data) {
+      return data.keys().hasAll(['userId', 'category', 'imageBase64', 'createdAt']) &&
+             data.userId == request.auth.uid &&
+             data.category in ['top', 'bottom', 'fullbody'] &&
+             data.imageBase64 is string && data.imageBase64.size() <= 1048487;
+    }
+
+    function isValidOutfit(data) {
       return data.keys().hasAll(['userId', 'resultImageBase64', 'createdAt']) &&
              data.userId == request.auth.uid &&
-             data.resultImageBase64 is string && data.resultImageBase64.size() <= 1048487 &&
-             (data.keys().hasAll(['clothingImageBase64']) ? (data.clothingImageBase64 is string && data.clothingImageBase64.size() <= 1048487) : true);
+             data.resultImageBase64 is string && data.resultImageBase64.size() <= 1048487;
     }
 
     match /users/{userId} {
@@ -34,10 +40,18 @@ service cloud.firestore {
       allow delete: if isSignedIn() && request.auth.uid == userId;
     }
 
-    match /tryOns/{tryOnId} {
+    match /wardrobeItems/{itemId} {
       allow get: if isSignedIn() && existing().userId == request.auth.uid;
       allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow create: if isSignedIn() && isValidId(tryOnId) && isValidTryOn(incoming()) && incoming().keys().size() <= 6 && incoming().createdAt == request.time;
+      allow create: if isSignedIn() && isValidId(itemId) && isValidWardrobeItem(incoming()) && incoming().keys().size() <= 4 && incoming().createdAt == request.time;
+      allow update: if false; // Immutable
+      allow delete: if isSignedIn() && existing().userId == request.auth.uid;
+    }
+
+    match /outfits/{outfitId} {
+      allow get: if isSignedIn() && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(outfitId) && isValidOutfit(incoming()) && incoming().keys().size() <= 3 && incoming().createdAt == request.time;
       allow update: if false; // Immutable
       allow delete: if isSignedIn() && existing().userId == request.auth.uid;
     }
