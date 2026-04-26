@@ -1,0 +1,8 @@
+{
+  "name": "Vestia - AI Try-On",
+  "description": "Application esthétique d'essayage virtuel de vêtements avec profil personnalisé et galerie de tenues pour hommes et femmes.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": []
+}

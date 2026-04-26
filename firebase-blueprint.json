@@ -1,0 +1,38 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile data",
+      "type": "object",
+      "properties": {
+        "gender": { "type": "string", "enum": ["men", "women", "unisex"] },
+        "basePhotoBase64": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["gender", "createdAt", "updatedAt"]
+    },
+    "TryOn": {
+      "title": "TryOn",
+      "description": "A generated try-on session",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "clothingImageBase64": { "type": "string" },
+        "resultImageBase64": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["userId", "resultImageBase64", "createdAt"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Stores user profile."
+    },
+    "tryOns/{tryOnId}": {
+      "schema": { "$ref": "#/entities/TryOn" },
+      "description": "Stores generated try-ons."
+    }
+  }
+}

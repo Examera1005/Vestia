@@ -1,0 +1,45 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Validation Helpers
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+    
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isSignedIn() { return request.auth != null; }
+    
+    function isValidUser(data) {
+      return data.keys().hasAll(['gender', 'createdAt', 'updatedAt']) &&
+             data.gender in ['men', 'women', 'unisex'] &&
+             (data.keys().hasAll(['basePhotoBase64']) ? (data.basePhotoBase64 is string && data.basePhotoBase64.size() <= 1048487) : true);
+    }
+    
+    function isValidTryOn(data) {
+      return data.keys().hasAll(['userId', 'resultImageBase64', 'createdAt']) &&
+             data.userId == request.auth.uid &&
+             data.resultImageBase64 is string && data.resultImageBase64.size() <= 1048487 &&
+             (data.keys().hasAll(['clothingImageBase64']) ? (data.clothingImageBase64 is string && data.clothingImageBase64.size() <= 1048487) : true);
+    }
+
+    match /users/{userId} {
+      allow get: if isSignedIn() && request.auth.uid == userId;
+      allow create: if isSignedIn() && request.auth.uid == userId && isValidId(userId) && isValidUser(incoming()) && incoming().keys().size() <= 6 && incoming().createdAt == request.time && incoming().updatedAt == request.time;
+      allow update: if isSignedIn() && request.auth.uid == userId && isValidUser(incoming()) && incoming().diff(existing()).affectedKeys().hasOnly(['basePhotoBase64', 'gender', 'updatedAt']) && incoming().updatedAt == request.time;
+      allow delete: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    match /tryOns/{tryOnId} {
+      allow get: if isSignedIn() && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(tryOnId) && isValidTryOn(incoming()) && incoming().keys().size() <= 6 && incoming().createdAt == request.time;
+      allow update: if false; // Immutable
+      allow delete: if isSignedIn() && existing().userId == request.auth.uid;
+    }
+  }
+}
