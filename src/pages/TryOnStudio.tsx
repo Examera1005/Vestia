@@ -1,18 +1,28 @@
 import { useState, ChangeEvent, useEffect, useRef } from 'react';
+import type { MouseEvent } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { extractClothing } from '../lib/gemini';
 import { resizeImageFile, resizeBase64Image, makeWhiteTransparent } from '../lib/utils';
 import { db } from '../lib/firebase';
-import { doc, setDoc, collection, query, where, getDocs, deleteDoc } from 'firebase/firestore';
+import { doc, setDoc, collection, query, where, getDocs, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { Upload, Sparkles, Wand2, Image as ImageIcon, Save, Download, Plus, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import html2canvas from 'html2canvas';
 
 interface WardrobeItem {
   id: string;
+  userId: string;
   category: 'top' | 'bottom' | 'fullbody';
   imageBase64: string;
-  createdAt: string;
+  createdAt: unknown;
+}
+
+function createdAtMillis(value: unknown) {
+  if (typeof value === 'string') return new Date(value).getTime();
+  if (value && typeof value === 'object' && 'toMillis' in value && typeof value.toMillis === 'function') {
+    return value.toMillis();
+  }
+  return 0;
 }
 
 export default function TryOnStudio() {
@@ -44,7 +54,7 @@ export default function TryOnStudio() {
       const q = query(collection(db, 'wardrobeItems'), where('userId', '==', user.uid));
       const snaps = await getDocs(q);
       const items = snaps.docs.map(d => ({ id: d.id, ...d.data() })) as WardrobeItem[];
-      items.sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      items.sort((a,b) => createdAtMillis(b.createdAt) - createdAtMillis(a.createdAt));
       setWardrobe(items);
     } catch (e) {
       console.error(e);
@@ -88,7 +98,12 @@ export default function TryOnStudio() {
         createdAt: new Date().toISOString()
       };
       
-      await setDoc(doc(db, 'wardrobeItems', itemId), newItem);
+      await setDoc(doc(db, 'wardrobeItems', itemId), {
+        userId: user.uid,
+        category: extractingCategory,
+        imageBase64: compressedResult,
+        createdAt: serverTimestamp()
+      });
       
       // Update local state
       setWardrobe(prev => [newItem, ...prev]);
@@ -102,7 +117,7 @@ export default function TryOnStudio() {
     }
   };
 
-  const handleDeleteItem = async (e: React.MouseEvent, id: string) => {
+  const handleDeleteItem = async (e: MouseEvent, id: string) => {
     e.stopPropagation();
     try {
       await deleteDoc(doc(db, 'wardrobeItems', id));
@@ -126,7 +141,7 @@ export default function TryOnStudio() {
       await setDoc(doc(db, 'outfits', outfitId), {
         userId: user.uid,
         resultImageBase64: compressed,
-        createdAt: new Date().toISOString()
+        createdAt: serverTimestamp()
       });
       alert('Outfit saved to gallery!');
     } catch (e) {

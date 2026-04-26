@@ -15,7 +15,8 @@ service cloud.firestore {
     function isSignedIn() { return request.auth != null; }
     
     function isValidUser(data) {
-      return data.keys().hasAll(['gender', 'createdAt', 'updatedAt']) &&
+      return data.keys().hasOnly(['gender', 'basePhotoBase64', 'createdAt', 'updatedAt']) &&
+             data.keys().hasAll(['gender', 'createdAt', 'updatedAt']) &&
              data.gender in ['men', 'women', 'unisex'] &&
              (data.keys().hasAll(['basePhotoBase64']) ? (data.basePhotoBase64 is string && data.basePhotoBase64.size() <= 1048487) : true);
     }

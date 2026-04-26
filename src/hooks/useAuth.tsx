@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 
 export interface UserProfile {
@@ -60,14 +60,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const createProfile = async (data: Omit<UserProfile, 'createdAt' | 'updatedAt'>) => {
     if (!user) throw new Error("Not logged in");
-    const now = new Date().toISOString();
-    const newProfile: UserProfile = {
+    const newProfile = {
       ...data,
-      createdAt: now,
-      updatedAt: now,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
     };
     await setDoc(doc(db, 'users', user.uid), newProfile);
-    setProfile(newProfile);
+    setProfile({
+      ...data,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
   };
 
   return (

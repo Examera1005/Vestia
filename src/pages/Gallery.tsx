@@ -8,7 +8,15 @@ interface TryOnRecord {
   id: string;
   clothingImageBase64: string;
   resultImageBase64: string;
-  createdAt: string;
+  createdAt: unknown;
+}
+
+function createdAtMillis(value: unknown) {
+  if (typeof value === 'string') return new Date(value).getTime();
+  if (value && typeof value === 'object' && 'toMillis' in value && typeof value.toMillis === 'function') {
+    return value.toMillis();
+  }
+  return 0;
 }
 
 export default function Gallery() {
@@ -32,7 +40,7 @@ export default function Gallery() {
           ...doc.data()
         })) as TryOnRecord[];
         
-        fetchedItems.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        fetchedItems.sort((a, b) => createdAtMillis(b.createdAt) - createdAtMillis(a.createdAt));
         setItems(fetchedItems);
       } catch (err: any) {
         console.error("Firebase error", err.message);
