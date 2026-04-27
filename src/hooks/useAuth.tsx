@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { User, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
-import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { User, GoogleAuthProvider, signInWithPopup, signOut, updateProfile as updateAuthProfile } from 'firebase/auth';
+import { deleteField, doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 
 export interface UserProfile {
@@ -23,6 +23,33 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 
+function toFirestoreProfile(data: Omit<UserProfile, 'createdAt' | 'updatedAt'>) {
+  return {
+    username: data.username,
+    gender: data.gender,
+    ...(data.basePhotoBase64 ? { basePhotoBase64: data.basePhotoBase64 } : {}),
+  };
+}
+
+function toFirestoreProfileUpdate(data: Omit<UserProfile, 'createdAt' | 'updatedAt'>) {
+  return {
+    username: data.username,
+    gender: data.gender,
+    basePhotoBase64: data.basePhotoBase64 || deleteField(),
+  };
+}
+
+function toLegacyFirestoreProfile(data: Omit<UserProfile, 'createdAt' | 'updatedAt'>) {
+  return {
+    gender: data.gender,
+    ...(data.basePhotoBase64 ? { basePhotoBase64: data.basePhotoBase64 } : {}),
+  };
+}
+
+function isPermissionError(error: unknown) {
+  return Boolean(error && typeof error === 'object' && 'code' in error && error.code === 'permission-denied');
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -36,7 +63,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const docRef = doc(db, 'users', u.uid);
           const docSnap = await getDoc(docRef);
           if (docSnap.exists()) {
-            setProfile(docSnap.data() as UserProfile);
+            const data = docSnap.data() as Partial<UserProfile>;
+            setProfile({
+              username: data.username || u.displayName?.split(' ')[0] || 'User',
+              gender: data.gender || 'unisex',
+              basePhotoBase64: data.basePhotoBase64 || null,
+              createdAt: data.createdAt || new Date().toISOString(),
+              updatedAt: data.updatedAt || new Date().toISOString(),
+            });
           } else {
             setProfile(null);
           }
@@ -62,12 +96,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const createProfile = async (data: Omit<UserProfile, 'createdAt' | 'updatedAt'>) => {
     if (!user) throw new Error("Not logged in");
+    await updateAuthProfile(user, { displayName: data.username });
     const newProfile = {
-      ...data,
+      ...toFirestoreProfile(data),
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
-    await setDoc(doc(db, 'users', user.uid), newProfile);
+    try {
+      await setDoc(doc(db, 'users', user.uid), newProfile);
+    } catch (error) {
+      if (!isPermissionError(error)) throw error;
+      await setDoc(doc(db, 'users', user.uid), {
+        ...toLegacyFirestoreProfile(data),
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+    }
     setProfile({
       ...data,
       createdAt: new Date().toISOString(),
@@ -77,10 +121,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const updateProfile = async (data: Omit<UserProfile, 'createdAt' | 'updatedAt'>) => {
     if (!user) throw new Error("Not logged in");
-    await setDoc(doc(db, 'users', user.uid), {
-      ...data,
-      updatedAt: serverTimestamp(),
-    }, { merge: true });
+    await updateAuthProfile(user, { displayName: data.username });
+    try {
+      await setDoc(doc(db, 'users', user.uid), {
+        ...toFirestoreProfileUpdate(data),
+        updatedAt: serverTimestamp(),
+      }, { merge: true });
+    } catch (error) {
+      if (!isPermissionError(error)) throw error;
+      await setDoc(doc(db, 'users', user.uid), {
+        ...toLegacyFirestoreProfile(data),
+        updatedAt: serverTimestamp(),
+      }, { merge: true });
+    }
     setProfile({
       ...data,
       createdAt: profile?.createdAt || new Date().toISOString(),
