@@ -15,10 +15,15 @@ service cloud.firestore {
     function isSignedIn() { return request.auth != null; }
     
     function isValidUser(data) {
-      return data.keys().hasOnly(['gender', 'basePhotoBase64', 'createdAt', 'updatedAt']) &&
-             data.keys().hasAll(['gender', 'createdAt', 'updatedAt']) &&
+      return data.keys().hasOnly(['username', 'gender', 'basePhotoBase64', 'createdAt', 'updatedAt']) &&
+             data.keys().hasAll(['username', 'gender', 'createdAt', 'updatedAt']) &&
+             data.username is string &&
+             data.username.size() >= 2 &&
+             data.username.size() <= 24 &&
              data.gender in ['men', 'women', 'unisex'] &&
-             (data.keys().hasAll(['basePhotoBase64']) ? (data.basePhotoBase64 is string && data.basePhotoBase64.size() <= 1048487) : true);
+             (data.keys().hasAll(['basePhotoBase64']) ?
+               ((data.basePhotoBase64 is string && data.basePhotoBase64.size() <= 1048487) || data.basePhotoBase64 == null) :
+               true);
     }
     
     function isValidWardrobeItem(data) {
@@ -37,7 +42,7 @@ service cloud.firestore {
     match /users/{userId} {
       allow get: if isSignedIn() && request.auth.uid == userId;
       allow create: if isSignedIn() && request.auth.uid == userId && isValidId(userId) && isValidUser(incoming()) && incoming().keys().size() <= 6 && incoming().createdAt == request.time && incoming().updatedAt == request.time;
-      allow update: if isSignedIn() && request.auth.uid == userId && isValidUser(incoming()) && incoming().diff(existing()).affectedKeys().hasOnly(['basePhotoBase64', 'gender', 'updatedAt']) && incoming().updatedAt == request.time;
+      allow update: if isSignedIn() && request.auth.uid == userId && isValidUser(incoming()) && incoming().diff(existing()).affectedKeys().hasOnly(['username', 'basePhotoBase64', 'gender', 'updatedAt']) && incoming().updatedAt == request.time;
       allow delete: if isSignedIn() && request.auth.uid == userId;
     }
 

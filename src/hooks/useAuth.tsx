@@ -4,8 +4,9 @@ import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 
 export interface UserProfile {
+  username: string;
   gender: 'men' | 'women' | 'unisex';
-  basePhotoBase64: string;
+  basePhotoBase64?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -17,6 +18,7 @@ interface AuthContextType {
   signIn: () => Promise<void>;
   logOut: () => Promise<void>;
   createProfile: (profile: Omit<UserProfile, 'createdAt' | 'updatedAt'>) => Promise<void>;
+  updateProfile: (profile: Omit<UserProfile, 'createdAt' | 'updatedAt'>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
@@ -73,8 +75,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  const updateProfile = async (data: Omit<UserProfile, 'createdAt' | 'updatedAt'>) => {
+    if (!user) throw new Error("Not logged in");
+    await setDoc(doc(db, 'users', user.uid), {
+      ...data,
+      updatedAt: serverTimestamp(),
+    }, { merge: true });
+    setProfile({
+      ...data,
+      createdAt: profile?.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+  };
+
   return (
-    <AuthContext.Provider value={{ user, profile, loading, signIn, logOut, createProfile }}>
+    <AuthContext.Provider value={{ user, profile, loading, signIn, logOut, createProfile, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );

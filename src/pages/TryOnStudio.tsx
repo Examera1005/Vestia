@@ -1,5 +1,6 @@
 import { useState, ChangeEvent, useEffect, useRef } from 'react';
 import type { MouseEvent } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { extractClothing } from '../lib/gemini';
 import { resizeImageFile, resizeBase64Image, makeWhiteTransparent } from '../lib/utils';
@@ -27,6 +28,7 @@ function createdAtMillis(value: unknown) {
 
 export default function TryOnStudio() {
   const { user, profile } = useAuth();
+  const hasBasePhoto = Boolean(profile?.basePhotoBase64);
   
   // Extract state
   const [clothingPhoto, setClothingPhoto] = useState<string | null>(null);
@@ -173,6 +175,22 @@ export default function TryOnStudio() {
         <p className="text-sm font-semibold tracking-wide text-black/50">Extract items and combine them on your silhouette.</p>
       </header>
 
+      {!hasBasePhoto && (
+        <div className="mb-8 flex flex-col gap-4 border border-black/10 bg-white/60 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h3 className="font-serif text-2xl">Silhouette required</h3>
+            <p className="mt-1 text-sm font-medium leading-6 text-black/50">Add a full-body photo to activate extraction and live projection.</p>
+          </div>
+          <Link
+            to="/onboarding"
+            className="inline-flex items-center justify-center gap-2 bg-black px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-[#f5f2ed] transition-colors hover:bg-black/90"
+          >
+            Add photo
+            <Plus className="h-3 w-3" />
+          </Link>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
         
         {/* Left Column - Tools & Wardrobe */}
@@ -212,7 +230,7 @@ export default function TryOnStudio() {
                    
                    <button 
                       onClick={handleExtract}
-                      disabled={!clothingPhoto || isExtracting}
+                      disabled={!clothingPhoto || !hasBasePhoto || isExtracting}
                       className="flex-1 flex items-center justify-center gap-2 bg-black text-[#f5f2ed] rounded-xl font-bold uppercase tracking-widest text-[10px] transition-colors hover:bg-black/90 disabled:opacity-50"
                    >
                       <Sparkles className="h-3 w-3" />
@@ -283,8 +301,13 @@ export default function TryOnStudio() {
            <div className="flex-1 bg-white border border-black/10 rounded-2xl p-4 overflow-hidden shadow-inner flex items-center justify-center">
               <div ref={outfitRef} className="relative w-full max-w-[400px] aspect-[3/4] bg-[#f5f2ed] rounded-xl overflow-hidden shadow-sm">
                  {/* Base Layer */}
-                 {profile?.basePhotoBase64 && (
+                 {profile?.basePhotoBase64 ? (
                    <img src={profile.basePhotoBase64} alt="Silhouette" className="absolute inset-0 w-full h-full object-cover z-0" />
+                 ) : (
+                   <div className="absolute inset-0 z-0 flex flex-col items-center justify-center bg-[#f5f2ed] p-8 text-center text-black/35">
+                     <ImageIcon className="mb-3 h-8 w-8 opacity-60" />
+                     <p className="text-xs font-bold uppercase tracking-widest">Add your silhouette</p>
+                   </div>
                  )}
                  
                  {/* Clothing Layers (Draggable to allow fine-tuning if needed) */}
