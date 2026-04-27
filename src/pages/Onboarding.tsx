@@ -63,6 +63,15 @@ export default function Onboarding() {
     }
   };
 
+  const handleCancel = async () => {
+    if (profile) {
+      navigate('/dashboard');
+      return;
+    }
+
+    await logOut();
+  };
+
   return (
     <div className="min-h-screen bg-[#f5f2ed] px-6 py-8 text-[#1a1a1a]">
       <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-6xl flex-col">
@@ -72,10 +81,10 @@ export default function Onboarding() {
             <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-black/40">Account Atelier</p>
           </div>
           <button
-            onClick={logOut}
+            onClick={handleCancel}
             className="rounded-full border border-black/10 px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-black/50 transition-colors hover:border-black/30 hover:text-black"
           >
-            Sign out
+            {profile ? 'Back' : 'Sign out'}
           </button>
         </header>
 
@@ -172,7 +181,7 @@ export default function Onboarding() {
             <div className="flex gap-3">
               <button 
                 type="button"
-                onClick={logOut}
+                onClick={handleCancel}
                 className="flex-1 border border-black/10 py-4 text-xs font-bold uppercase tracking-widest transition-colors hover:bg-black/5"
               >
                 Cancel
